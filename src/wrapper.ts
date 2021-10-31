@@ -1,36 +1,49 @@
-// Resolver/Mutation Wrapper
-
+import { GraphQLResolveInfo } from 'graphql';
 import { parseResolveInfo } from 'graphql-parse-resolve-info';
 
-export interface ApolloResolving {
-    parent?: any;
-    context?: any;
-    info?: any;
-    args?: any;
+declare global {
+	interface ApolloContext {
+		[key: string]: any;
+	}
 }
 
-export function ApolloCallbackWrapper(cb: Function, resolvers: any, resolverType: string) {
-    return function(
-        parent?: ApolloResolving["parent"],
-        args?: ApolloResolving["args"],
-        context?: ApolloResolving["context"],
-        info?: ApolloResolving["info"]
-    ) {
-        const self: ApolloResolving = {
-            parent,
-            args,
-            context,
-            info,
-            // @ts-ignore
-            resolvers: resolvers[resolverType],
-            resolverType,
-            ...(info ? parseResolveInfo(info) : {}),
+export interface ApolloResolving {
+	parent: any | undefined | null;
+	context: ApolloContext;
+	info: GraphQLResolveInfo;
+	resolvers: any;
+	resolverType: any;
+	args: any;
+	[key: string]: any;
+}
+
+export function ApolloCallbackWrapper(
+	cb: Function, 
+	resolvers: any, 
+	resolverType: string
+) {
+	return function(
+		parent?: ApolloResolving["parent"],
+		args?: ApolloResolving["args"],
+		context?: ApolloResolving["context"],
+		info?: ApolloResolving["info"]
+	) {
+		const resolving: ApolloResolving = {
+			parent,
+			args,
+			// @ts-ignore
+			context,
+			// @ts-ignore
+			info,
+			resolvers: resolvers[resolverType],
+			resolverType,
+			...(info ? parseResolveInfo(info) : {}),
+		}
+		if (context && info) {
+            return cb(args, resolving)
         }
-        if (context && info) {
-            return cb.call(self, args);
-        }
-        return cb.call(self, parent, args, context, info)
-    }
+        return cb(parent, args, context, info)
+	}
 }
 
 export function WrapApolloResolvers(resolvers: any) {
