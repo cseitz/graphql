@@ -18,7 +18,7 @@ async function writeFile(file: string, data: any) {
 }
 
 export async function GraphQLCodegen(schema: any, typeFile: string, schemaFile?: string) {
-    if (!__filename.includes('.ts')) return;
+    // if (!__filename.includes('.ts')) return;
     const printedSchema = '# AUTO-GENERATED, DO NOT MODIFY\r\n# COMPILED FROM API\r\n\r\n'
      + printSchema(schema);
     if (schemaFile) {
