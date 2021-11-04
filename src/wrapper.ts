@@ -40,7 +40,7 @@ export function ApolloCallbackWrapper(
 			...(info ? parseResolveInfo(info) : {}),
 		}
 		if (context && info) {
-            return cb(args, resolving)
+            return cb(args, context, resolving)
         }
         return cb(parent, args, context, info)
 	}
