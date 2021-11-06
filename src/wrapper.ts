@@ -63,3 +63,53 @@ export function WrapApolloResolvers(resolvers: any) {
 
     return resolvers;
 }
+
+
+//** Used in delayed computation of wrapped callbacks */
+/*
+class mutations extends ApolloResolverWrapper {
+    static collection = {
+        rename
+    };
+}; new mutations();
+
+mutations.collection; // { rename: wrapped(rename) }
+*/
+export class ApolloResolverWrapper {
+    [key: string]: any;
+    constructor(resolverType?: string) {
+        const groups = Object.getPrototypeOf(this).constructor;
+        if (!resolverType) {
+            const name = groups.name.toLowerCase();
+            if (name.includes('mut')) {
+                resolverType = 'Mutation'
+            } else if (name.includes('que')) {
+                resolverType = 'Query'
+            } else if (name.includes('sub')) {
+                resolverType = 'Subscription'
+            } else {
+				resolverType = ''
+			}
+        }
+        for (const key in groups) {
+            const resolvers = groups[key];
+            const wrappedKey = '_' + key;
+            Object.defineProperty(groups, key, {
+                get() {
+                    if (wrappedKey in this) return this[wrappedKey];
+                    const _resolvers = { ...resolvers };
+                    for (const name in resolvers) {
+                        _resolvers[name] = ApolloCallbackWrapper(
+                            resolvers[name],
+                            _resolvers,
+                            resolverType as string
+                        )
+                    }
+                    this[wrappedKey] = _resolvers;
+                    return this[key];
+                }
+            })
+        }
+    }
+}
+
