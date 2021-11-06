@@ -7,6 +7,11 @@ declare global {
     }
 }
 
+const middleware: any[] = [];
+export function ApolloCallbackMiddleware(cb: any) {
+    middleware.push(cb);
+}
+
 export interface ApolloResolving {
     parent: any | undefined | null;
     context: ApolloContext;
@@ -22,7 +27,7 @@ export function ApolloCallbackWrapper(
     resolvers: any, 
     resolverType: string
 ) {
-    return function(
+    return async function(
         parent?: ApolloResolving["parent"],
         args?: ApolloResolving["args"],
         context?: ApolloResolving["context"],
@@ -40,7 +45,11 @@ export function ApolloCallbackWrapper(
             ...(info ? parseResolveInfo(info) : {}),
         }
         if (context && info) {
-            return cb(args, context, resolving)
+            let res = cb(args, context, resolving)
+            for (const func of middleware) {
+                res = (await func(res, args, context, resolving)) || res;
+            }
+            return res
         }
         return cb(parent, args, context, info)
     }
